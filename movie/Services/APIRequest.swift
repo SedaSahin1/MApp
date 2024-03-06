@@ -15,12 +15,9 @@ class MovieService {
   
     func getMovies<T: Decodable>(url: String, method: HTTPMethod, parameters: [String: Any], responseType: T.Type, completion: @escaping (Result<T, Error>) -> Void) {
         let newUrl = url
-        // İnternet bağlantısını kontrol et
         if NetworkReachabilityManager()?.isReachable ?? false {
-            // İnternet bağlantısı varsa, gerçek veriyi getir
             fetchDataFromServer(url: newUrl, method: method, parameters: parameters, responseType: responseType, completion: completion)
         } else {
-            // İnternet bağlantısı yoksa, önceki cachelenmiş veriyi kullan
             if let cachedData = cache.object(forKey: newUrl as NSString) as NSData? {
                 handleSuccessResponse(data: cachedData as Data, responseType: responseType, completion: completion)
             } else {
@@ -28,7 +25,6 @@ class MovieService {
                     print("Loaded data: \(loadedData)")
                     handleSuccessResponse(data: loadedData as Data, responseType: responseType, completion: completion)
                 }
-                // Cache'de veri yoksa, hata durumunu işle
                 let error = NSError(domain: "NoInternetErrorDomain", code: -1, userInfo: [NSLocalizedDescriptionKey: "No internet connection"])
                 completion(.failure(error))
             }
@@ -41,7 +37,6 @@ class MovieService {
                 switch response.result {
                 case .success(let data):
                     self.handleSuccessResponse(data: data, responseType: responseType, completion: completion)
-                    // Cache response
                     self.cache.setObject(data as NSData, forKey: url as NSString)
                     CacheManager.saveDataToCache(data: data, fileName: "\(getLastTwoComponents(from: url) ?? "")\(parameters["page"] ?? 0).txt")
                 case .failure(let error):
